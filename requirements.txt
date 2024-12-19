@@ -3,3 +3,4 @@ fastapi
 minio
 uvicorn
 pydantic_settings
+pydantic[email]

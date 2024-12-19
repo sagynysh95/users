@@ -1,5 +1,4 @@
 from pymongo import MongoClient
-from models import User, UserRead
 from bson import ObjectId
 from core.config import settings
 
@@ -14,7 +13,7 @@ db = mongo_client[settings.DATABASE_NAME]
 collection = db[settings.COLLECTION_NAME]
 
 
-def mongo_insert_and_return(employee: User, file_path: str):   
+def mongo_insert_and_return(employee, file_path):   
     result = collection.insert_one({
                     "name": employee.name,
                     "surname": employee.surname,
@@ -48,4 +47,10 @@ def mongo_update_one(id: str, employee: dict):
 
 def mongo_delete_one(id: str):
     collection.delete_one({"_id": ObjectId(id)})
+
+
+def mongo_get_username(username):
+    if collection.find_one({"username": username}):
+        return True
+    return False
     

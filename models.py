@@ -1,24 +1,87 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, EmailStr, model_validator
 from typing import Optional
+from mongo_file import mongo_get_username
+from utils.validate_password import validate_password
+from utils.generate_password import generate_password
+import re
+import hashlib
+
 
 class User(BaseModel):
-    name: Optional[str] = Field(default=None)
-    surname: Optional[str] = Field(default=None)
-    iin: Optional[int] = Field(default=0)
-    role: Optional[str] = Field(default=None)
-    phone_number: Optional[str] = Field(default=None)
-
-
-    @field_validator("iin")
-    def validate_iin(cls, value):
-        if value == 0:
-            return value
-        if len(str(value)) != 12:
-            raise ValueError("ИИН должен содержать 12 цифр")
-        return value
+    name: Optional[str] = Field(
+        default=None,
+        description="Имя пользователя на кириллице"
+    )
+    surname: Optional[str] = Field(
+        default=None,
+        description="Фамилия пользователя на кириллице"
+    )
+    email: Optional[EmailStr] = Field(
+        description="Валидный емайл"
+    )
+    iin: Optional[str] = Field(
+        default=None,
+        description="ИИН должен содержать 12 цифр",
+        pattern=r"^\d{12}$"
+    )
+    role: Optional[str] = Field(
+        default=None,
+        examples=["employee", "guest"],
+        description="Сотрудник или посетитель"
+    )
+    phone_number: Optional[str] = Field(
+        default=None,
+        pattern=r"^(?:\+7|8)\d{10}$"
+    )
+    rank: Optional[str] = Field(
+        default=None,
+        examples=["майор", "капитан", "полковник"],
+        description="Военное звание пользователя если есть"
+    )
+    military_unit: Optional[str] = Field(
+        default=None, 
+        description="Наименование части где работает пользователь если есть"
+    )
     
 
 class UserRead(User):
-    id: Optional[str] = Field(default=None)
-    img_path: Optional[str] = Field(default=None)
+    id: Optional[str] = Field(
+        description="Генерирует автоматический"
+    )
+    img_path: Optional[str] = Field(
+        description="Вставляется автоматический, это ссылка на фото пользователя"
+    )
+    username: Optional[str] = Field(
+        description="Генерируется автоматический"
+    )
+    password: Optional[str] = Field(
+        default_factory=generate_password,
+        description="Генерируется автоматический первый раз"
+    )
     
+    @model_validator(mode="before")
+    def generate_username(cls, values):
+        name = values.get("name")
+        surname = values.get("surname")
+        username = f"{name[:1]}.{surname}"
+        if mongo_get_username(username):
+            values["username"] = username
+        values["username"] = f"{name}.{surname}"
+        return values
+
+    @model_validator(mode="before")
+    def validate_password(cls, values):
+        password = values.get("password")
+        pattern = (
+            r"^(?=.*[a-z])"        # хотя бы одна строчная буква
+            r"(?=.*[A-Z])"         # хотя бы одна заглавная буква
+            r"(?=.*\d)"            # хотя бы одна цифра
+            r"(?=.*[!@#$%^&*])"    # хотя бы один специальный символ
+            r".{8,20}$"            # длина от 8 до 20 символов
+        )
+        if not re.match(pattern, password):
+            raise ValueError(
+                "Пароль должен содержать от 8 до 20 символов, включая строчные и заглавные буквы, цифры и специальные символы."
+            )
+        values["password"] = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        return values

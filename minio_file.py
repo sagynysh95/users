@@ -9,7 +9,7 @@ minio_client = Minio(endpoint=settings.MINIO_ENDPOINT,
 
 def upload_photo_minio(name, surname, iin):
     file = "photos/2024-12-18T14:06:53.092810.png"
-    b_name = "employees-bucket"
+    b_name = "employees"
 
     if not minio_client.bucket_exists(bucket_name=b_name):
         try:
@@ -23,5 +23,5 @@ def upload_photo_minio(name, surname, iin):
         minio_client.fput_object(b_name, obj_name, file)
     except:
         print("Не получилось загрузить фото")
-        
-    return minio_client.presigned_get_object(b_name, obj_name)
+
+    return f"http://localhost:9000/{b_name}/{obj_name}"
