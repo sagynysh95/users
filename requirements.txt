@@ -2,3 +2,4 @@ pymongo
 fastapi
 minio
 uvicorn
+pydantic_settings

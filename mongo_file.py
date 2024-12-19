@@ -1,30 +1,43 @@
 from pymongo import MongoClient
-from models import User
+from models import User, UserRead
 from bson import ObjectId
+from core.config import settings
 
 
 mongo_client = MongoClient(
-    host="mongo",
-    port=27017,
-    username="root",
-    password="root123"
+    host=settings.DATABASE_HOST,
+    port=settings.DATABASE_PORT,
+    username=settings.DATABASE_USERNAME,
+    password=settings.DATABASE_PASSWORD
 )
-db = mongo_client["employees_db"]
-collection = db["employees_collection"]
+db = mongo_client[settings.DATABASE_NAME]
+collection = db[settings.COLLECTION_NAME]
 
 
-def mongo_insert_one(employee: User, file_path: str):   
-    collection.insert_one({
-        "name": employee.name,
-        "surname": employee.surname,
-        "iin": employee.iin,
-        "role": employee.role,
-        "photo_link": file_path
-    })
+def mongo_insert_and_return(employee: User, file_path: str):   
+    result = collection.insert_one({
+                    "name": employee.name,
+                    "surname": employee.surname,
+                    "iin": employee.iin,
+                    "role": employee.role,
+                    "photo_link": file_path
+                })
+    inserted_id = result.inserted_id
+    str_id = str(inserted_id)
+    updated_result = collection.update_one(
+        {"_id": inserted_id},
+        {"$set": {"id": str_id}}
+    )
+    result_return = collection.find_one({"id": str_id}, {"_id": 0})
+    return result_return
 
 
 def mongo_get():
-    return collection.find()
+    return collection.find({}, {"_id": 0})
+
+
+def mongo_get_by_id(id):
+    return collection.find_one({"id": id}, {"_id": 0})
 
 
 def mongo_update_one(id: str, employee: dict):

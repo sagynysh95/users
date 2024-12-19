@@ -1,22 +1,18 @@
 from minio import Minio
+from core.config import settings
 
-minio_client = Minio("minio:9000",
-                     access_key="admin",
-                     secret_key="admin123",
+minio_client = Minio(endpoint=settings.MINIO_ENDPOINT,
+                     access_key=settings.MINIO_ACCESS_KEY,
+                     secret_key=settings.MINIO_SECRET_KEY,
                      secure=False
                      )
 
 def upload_photo_minio(name, surname, iin):
     file = "photos/2024-12-18T14:06:53.092810.png"
     b_name = "employees-bucket"
-    # with open(file, 'rb') as file:
-    #     file = file.read()
-    print("Прочитали файл")
-
 
     if not minio_client.bucket_exists(bucket_name=b_name):
         try:
-            print("Внутри try")
             minio_client.make_bucket(b_name)
             print("Создали бакет")
         except Exception as e:
@@ -25,11 +21,7 @@ def upload_photo_minio(name, surname, iin):
     obj_name = f"{name}-{surname}-{iin}.png"
     try:
         minio_client.fput_object(b_name, obj_name, file)
-        print("Вставили фото в минИО")
     except:
         print("Не получилось загрузить фото")
+        
     return minio_client.presigned_get_object(b_name, obj_name)
-
-# upload_photo_minio("sag", "zhak", "87047")
-
-# http://172.18.0.4:9000 
