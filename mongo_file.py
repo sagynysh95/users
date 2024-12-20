@@ -20,6 +20,7 @@ def mongo_insert_and_return(employee):
     result = setup_mongo().insert_one({
                     "name": employee.name,
                     "surname": employee.surname,
+                    "father_name": employee.father_name,
                     "iin": employee.iin,
                     "role": employee.role,
                     "img_path": employee.img_path,
@@ -34,9 +35,10 @@ def mongo_insert_and_return(employee):
     str_id = str(inserted_id)
     updated_result = setup_mongo().update_one(
         {"_id": inserted_id},
-        {"$set": {"id": str_id}}
+        {"$set": {"user_id": str_id}}
     )
-    result_return = setup_mongo().find_one({"id": str_id}, {"_id": 0})
+    result_return: dict = setup_mongo().find_one({"user_id": str_id}, {"_id": 0})
+    print(result_return)
     return result_return
 
 
@@ -45,7 +47,7 @@ def mongo_get():
 
 
 def mongo_get_by_id(id):
-    return setup_mongo().find_one({"id": id}, {"_id": 0})
+    return setup_mongo().find_one({"user_id": id}, {"_id": 0})
 
 
 def mongo_update_one(id: str, employee: dict):
@@ -62,4 +64,16 @@ def mongo_get_username(username):
     if setup_mongo().find_one({"username": username}):
         return False
     return True
+
+def mongo_get_query(query, skip, limit):
+    result = list(
+        setup_mongo().find(query, {"_id": 0}).skip(skip).limit(limit)
+    )
+    return result
+
+def count_documents(query):
+    return setup_mongo().count_documents(query)
+
+# setup_mongo()
+# print(mongo_get_username("b.ospan"))
     

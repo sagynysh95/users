@@ -1,8 +1,9 @@
-from fastapi import APIRouter
-from models import User, UserRead
+from fastapi import APIRouter, HTTPException, Query
+from models import User, UserCreate, UserRead
 from minio_file import upload_photo_minio
-from mongo_file import mongo_insert_and_return, mongo_update_one, mongo_delete_one, mongo_get, mongo_get_by_id
-from typing import List
+from mongo_file import (mongo_insert_and_return, mongo_update_one, 
+                        mongo_delete_one, mongo_get, mongo_get_query, count_documents)
+from typing import List, Optional
 
 router = APIRouter(tags=["users"])
 
@@ -10,27 +11,83 @@ router = APIRouter(tags=["users"])
 @router.post("/", status_code=201, response_model=UserRead)
 def create_user(employee: User):
     file_path = upload_photo_minio(employee.name, employee.surname, employee.iin)
-    result = UserRead(**employee.dict(), img_path=file_path)
-    print(result)
-    mongo_insert_and_return(result)
-
-    return result
-
-
-# @router.get("/", status_code=200, response_model=List[UserRead])
-# def get_users():
-#     result = mongo_get()
-#     return [UserRead(**data) for data in result]
+    result = UserCreate(**employee.dict(), img_path=file_path)
+    try:
+        result = mongo_insert_and_return(result)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error: {e}")
+    return UserRead.model_validate(result)
 
 
-@router.patch("/{id}", status_code=200, response_model=dict)
-def update_user(id: str, employee: dict):
+@router.get("/", status_code=200, response_model=List[UserRead])
+def get_users():
+    result = mongo_get()
+    return [UserRead(**data) for data in result]
+
+
+@router.get("/find", response_model=dict)
+def find_users(
+    skip: int = Query(0),
+    limit: int = Query(100),
+    username: Optional[str] = None,
+    name: Optional[str] = None,
+    surname: Optional[str] = None,
+    father_name: Optional[str] = None,
+    email: Optional[str] = None,
+    iin: Optional[str] = None,
+    role: Optional[str] = None,
+    phone_number: Optional[str] = None,
+    rank: Optional[str] = None,
+    military_unit: Optional[str] = None,
+    user_id: Optional[str] = None,
+):
+    try:
+        query = {}
+
+        if username:
+            query["username"] = username
+        if name:
+            query["name"] = name
+        if surname:
+            query["surname"] = surname
+        if father_name:
+            query["father_name"] = father_name
+        if email:
+            query["email"] = email
+        if iin:
+            query["iin"] = iin
+        if role:
+            query["role"] = role
+        if phone_number:
+            query["phone_number"] = phone_number
+        if rank:
+            query["rank"] = rank
+        if military_unit:
+            query["military_unit"] = military_unit
+        if user_id:
+            query["user_id"] = user_id
+        
+        total_count = count_documents(query)
+        result = mongo_get_query(query, skip, limit)
+        return {"totalCount": total_count, "users": result}
+    
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error: {e}")
+    
+
+
+@router.put("/{user_id}", status_code=200, response_model=dict)
+def update_user(user_id: str, employee: dict):
     update_data = {k: v for k, v in employee.items() if v is not None}
-    mongo_update_one(id, update_data)
+    result = mongo_update_one(user_id, update_data)
+    if result.modified_count == 0: 
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
     return {"updated": "Данные успешно обновлены"}
 
 
-@router.delete("/{id}", status_code=200, response_model=dict)
-def delete_user(id: str):
-    mongo_delete_one(id)
+@router.delete("/{user_id}", status_code=200, response_model=dict)
+def delete_user(user_id: str):
+    result = mongo_delete_one(user_id)
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
     return {"deleted": "Пользователь удален"}
