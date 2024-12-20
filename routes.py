@@ -17,25 +17,15 @@ def create_user(employee: User):
     return result
 
 
-@router.get("/", status_code=200, response_model=List[UserRead])
-def get_users():
-    result = mongo_get()
-    return [UserRead(**data) for data in result]
+# @router.get("/", status_code=200, response_model=List[UserRead])
+# def get_users():
+#     result = mongo_get()
+#     return [UserRead(**data) for data in result]
 
 
-@router.put("/{id}", status_code=200, response_model=dict)
-def update_user(id: str, employee: User):
-    update_data = {}
-    if employee.name:
-        update_data["name"] = employee.name
-    if employee.surname:
-        update_data["surname"] = employee.surname
-    if employee.iin:
-        update_data["iin"] = employee.iin
-    if employee.role:
-        update_data["role"] = employee.role
-    
-
+@router.patch("/{id}", status_code=200, response_model=dict)
+def update_user(id: str, employee: dict):
+    update_data = {k: v for k, v in employee.items() if v is not None}
     mongo_update_one(id, update_data)
     return {"updated": "Данные успешно обновлены"}
 
