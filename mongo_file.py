@@ -1,16 +1,17 @@
 from pymongo import MongoClient, ASCENDING
 from bson import ObjectId
-from core.config import settings
+import os
+
 
 def setup_mongo():
     mongo_client = MongoClient(
-        host=settings.DATABASE_HOST,
-        port=settings.DATABASE_PORT,
-        username=settings.DATABASE_USERNAME,
-        password=settings.DATABASE_PASSWORD
+        host=os.getenv("DATABASE_HOST"),
+        port=int(os.getenv("DATABASE_PORT")),
+        username=os.getenv("DATABASE_USERNAME"),
+        password=os.getenv("DATABASE_PASSWORD")
     )
-    db = mongo_client[settings.DATABASE_NAME]
-    collection = db[settings.COLLECTION_NAME]
+    db = mongo_client[os.getenv("DATABASE_NAME")]
+    collection = db[os.getenv("COLLECTION_NAME")]
 
     collection.create_index([("iin", ASCENDING)], unique=True)
     return collection

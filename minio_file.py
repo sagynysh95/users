@@ -1,11 +1,12 @@
 from minio import Minio
-from core.config import settings
 from PIL import Image
 from io import BytesIO
+import os
 
-minio_client = Minio(endpoint=settings.MINIO_ENDPOINT,
-                     access_key=settings.MINIO_ACCESS_KEY,
-                     secret_key=settings.MINIO_SECRET_KEY,
+
+minio_client = Minio(endpoint=os.getenv("MINIO_ENDPOINT"),
+                     access_key=os.getenv("MINIO_ACCESS_KEY"),
+                     secret_key=os.getenv("MINIO_SECRET_KEY"),
                      secure=False
                      )
 

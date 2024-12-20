@@ -12,11 +12,16 @@ services:
       - minio
     volumes:
       - .:/app
+    # environment:
+    #   MONGO_HOST: mongo
+    #   MINIO_ENDPOINT: minio:9000
+    #   MINIO_ACCESS_KEY: admin
+    #   MINIO_SECRET_KEY: admin123
     environment:
-      MONGO_HOST: mongo
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: admin
-      MINIO_SECRET_KEY: admin123
+      MONGO_HOST: ${DATABASE_HOST}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     networks:
       - mynetwork
   
@@ -24,12 +29,12 @@ services:
     image: mongo:latest
     container_name: mongo
     ports:
-      - "27017:27017"
+      - "${DATABASE_PORT}:${DATABASE_PORT}"
     volumes:
       - mongo_data:/data/db
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root123
+      MONGO_INITDB_ROOT_USERNAME: ${DATABASE_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DATABASE_PASSWORD}
     networks:
       - mynetwork
 
@@ -40,12 +45,12 @@ services:
       - "8081:8081"
     environment:
       ME_CONFIG_MONGODB_ENABLE_ADMIN: true
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: root123
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DATABASE_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DATABASE_PASSWORD}
       ME_CONFIG_MONGODB_SERVER: mongo
 
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+      ME_CONFIG_BASICAUTH_USERNAME: ${BASICAUTH_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${BASICAUTH_PASSWORD}
     networks:
       - mynetwork
 
@@ -53,8 +58,8 @@ services:
     image: minio/minio:latest
     container_name: minio
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: admin123
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
       - "9000:9000"   
       - "9001:9001"  
