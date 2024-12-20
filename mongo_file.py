@@ -17,20 +17,10 @@ def setup_mongo():
 
 
 def mongo_insert_and_return(employee):   
-    result = setup_mongo().insert_one({
-                    "name": employee.name,
-                    "surname": employee.surname,
-                    "father_name": employee.father_name,
-                    "iin": employee.iin,
-                    "role": employee.role,
-                    "img_path": employee.img_path,
-                    "email": employee.email,
-                    "phone_number": employee.phone_number,
-                    "rank": employee.rank,
-                    "military_unit": employee.military_unit,
-                    "username": employee.username,
-                    "password": employee.password
-                })
+    query = {}
+    for attribute, value in employee.__dict__.items():
+        query[attribute] = value
+    result = setup_mongo().insert_one(query)
     inserted_id = result.inserted_id
     str_id = str(inserted_id)
     updated_result = setup_mongo().update_one(

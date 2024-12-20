@@ -10,9 +10,9 @@ router = APIRouter(tags=["users"])
 
 @router.post("/", status_code=201, response_model=UserRead)
 def create_user(employee: User):
-    file_path = upload_photo_minio(employee.name, employee.surname, employee.iin)
-    result = UserCreate(**employee.dict(), img_path=file_path)
     try:
+        file_path = upload_photo_minio(employee.name, employee.surname, employee.iin)
+        result = UserCreate(**employee.dict(), img_path=file_path)
         result = mongo_insert_and_return(result)
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Error: {e}")
@@ -21,8 +21,11 @@ def create_user(employee: User):
 
 @router.get("/", status_code=200, response_model=List[UserRead])
 def get_users():
-    result = mongo_get()
-    return [UserRead(**data) for data in result]
+    try:
+        result = mongo_get()
+        return [UserRead(**data) for data in result]
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error: {e}")
 
 
 @router.get("/find", response_model=dict)
@@ -78,16 +81,23 @@ def find_users(
 
 @router.put("/{user_id}", status_code=200, response_model=dict)
 def update_user(user_id: str, employee: dict):
-    update_data = {k: v for k, v in employee.items() if v is not None}
-    result = mongo_update_one(user_id, update_data)
-    if result.modified_count == 0: 
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-    return {"updated": "Данные успешно обновлены"}
+    try:
+        update_data = {k: v for k, v in employee.items() if v is not None}
+        result = mongo_update_one(user_id, update_data)
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        return {"updated": "Данные успешно обновлены"}
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error: {e}")
+        
 
 
 @router.delete("/{user_id}", status_code=200, response_model=dict)
 def delete_user(user_id: str):
-    result = mongo_delete_one(user_id)
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-    return {"deleted": "Пользователь удален"}
+    try:
+        result = mongo_delete_one(user_id)
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        return {"deleted": "Пользователь удален"}
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error: {e}")

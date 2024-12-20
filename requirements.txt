@@ -4,3 +4,4 @@ minio
 uvicorn
 pydantic_settings
 pydantic[email]
+pillow==11.0.0

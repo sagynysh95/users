@@ -6,6 +6,19 @@ from utils.generate_password import generate_password
 from utils.cyrillic_latin import cyrillic_to_latin
 import re
 import hashlib
+from datetime import datetime
+from enum import Enum
+
+
+class Gender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+
+
+class EmployeeRole(str, Enum):
+    EMPLOYEE = "employee"
+    GUEST = "guest"
+    ADMINISTRATOR = "administrator"
 
 
 class User(BaseModel):
@@ -29,10 +42,13 @@ class User(BaseModel):
         description="ИИН должен содержать 12 цифр",
         pattern=r"^\d{12}$"
     )
-    role: Optional[str] = Field(
+    birth_date: Optional[str] = Field(
         default=None,
-        examples=["employee", "guest"],
-        description="Сотрудник или посетитель"
+        description="Дата рождения в формате YYYY-MM-DD",
+
+    )
+    role: EmployeeRole = Field(
+        description="Сотрудник, посетитель или админ"
     )
     phone_number: Optional[str] = Field(
         default=None,
@@ -47,7 +63,49 @@ class User(BaseModel):
         default=None, 
         description="Наименование части где работает пользователь если есть"
     )
-    
+    department: Optional[str] = Field(
+        default=None,
+        description="Департамент где работает пользователь"
+    )
+    gender: Gender = Field(
+        description="Пол пользователя"
+    )
+    marital_status: Optional[str] = Field(
+        default=None,
+        description="Семейное положение"
+    )
+    address: Optional[str] = Field(
+        default=None
+    )
+    education_level: Optional[str] = Field(
+        default=None
+    )
+    languages_spoken: Optional[str] = Field(
+        default=None
+    )
+    comments: Optional[str] = Field(
+        default=None,
+        description="Комментарий"
+    )
+
+    @model_validator(mode="before")
+    def validate_birth_date(cls, values):
+        birth_date = values.get("birth_date")
+        if birth_date is None:
+            return values 
+
+        try:
+            dob = datetime.strptime(birth_date, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError("Дата рождения должна быть в формате YYYY-MM-DD.")
+
+        if dob > datetime.now():
+            raise ValueError("Дата рождения не может быть в будущем.")
+
+        if (datetime.now() - dob).days / 365 > 150:
+            raise ValueError("Возраст не может превышать 150 лет.")
+
+        return values
 
 class UserCreate(User):
     user_id: Optional[str] = Field(
@@ -64,6 +122,9 @@ class UserCreate(User):
         default="@BIi#n3ArKXf",
         # default_factory=generate_password,
         description="Генерируется автоматический первый раз"
+    )
+    created_at: Optional[datetime] = Field(
+        default_factory=datetime.now
     )
     
     @model_validator(mode="before")
@@ -112,5 +173,6 @@ class UserRead(User):
     password: Optional[str] = Field(
         description="Генерируется автоматический первый раз"
     )
+    created_at: Optional[datetime]
     
     
