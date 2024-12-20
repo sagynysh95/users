@@ -3,14 +3,18 @@ from models import User, UserRead
 from minio_file import upload_photo_minio
 from mongo_file import mongo_insert_and_return, mongo_update_one, mongo_delete_one, mongo_get, mongo_get_by_id
 from typing import List
-router = APIRouter()
+
+router = APIRouter(tags=["users"])
 
 
 @router.post("/", status_code=201, response_model=UserRead)
 def create_user(employee: User):
     file_path = upload_photo_minio(employee.name, employee.surname, employee.iin)
-    result = mongo_insert_and_return(employee, file_path)
-    return UserRead(**result)
+    result = UserRead(**employee.dict(), img_path=file_path)
+    print(result)
+    mongo_insert_and_return(result)
+
+    return result
 
 
 @router.get("/", status_code=200, response_model=List[UserRead])

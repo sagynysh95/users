@@ -46,6 +46,7 @@ class User(BaseModel):
 
 class UserRead(User):
     id: Optional[str] = Field(
+        default=None,
         description="Генерирует автоматический"
     )
     img_path: Optional[str] = Field(
@@ -55,23 +56,28 @@ class UserRead(User):
         description="Генерируется автоматический"
     )
     password: Optional[str] = Field(
-        default_factory=generate_password,
+        default="@BIi#n3ArKXf",
+        # default_factory=generate_password,
         description="Генерируется автоматический первый раз"
     )
     
     @model_validator(mode="before")
     def generate_username(cls, values):
-        name = values.get("name")
-        surname = values.get("surname")
+        name = values.get("name").lower()
+        surname = values.get("surname").lower()
         username = f"{name[:1]}.{surname}"
         if mongo_get_username(username):
             values["username"] = username
-        values["username"] = f"{name}.{surname}"
+        else:
+            values["username"] = f"{name}.{surname}"
         return values
 
     @model_validator(mode="before")
     def validate_password(cls, values):
-        password = values.get("password")
+        password = values.get("password", generate_password())
+        print(password)
+        if not isinstance(password, str):
+            raise ValueError("Пароль должен быть строкой.")
         pattern = (
             r"^(?=.*[a-z])"        # хотя бы одна строчная буква
             r"(?=.*[A-Z])"         # хотя бы одна заглавная буква
@@ -83,5 +89,8 @@ class UserRead(User):
             raise ValueError(
                 "Пароль должен содержать от 8 до 20 символов, включая строчные и заглавные буквы, цифры и специальные символы."
             )
-        values["password"] = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        values["password"] = str(hashed_password)
         return values
+    
+    
