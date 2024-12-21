@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from models import User, UserCreate, UserRead, UserUpdatePassword
+from models import User, UserCreate, UserRead
 from minio_file import upload_photo_minio
 from mongo_file import (mongo_insert_and_return, mongo_update_one, 
                         mongo_delete_one, mongo_get, mongo_get_query, count_documents)
@@ -84,25 +84,12 @@ def update_user(user_id: str, employee: UserRead):
     try:
         update_data = employee.model_dump(exclude_unset=True)
         if not update_data:
-            raise HTTPException(status_code=400, detail="no data for update")
-        
+            raise HTTPException(status_code=400, detail="no data for")
         result = mongo_update_one(user_id, update_data)
 
         if result.modified_count == 0:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
         return {"updated": "Данные успешно обновлены"}
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Error: {e}")
-    
-
-@router.put("/password/{user_id}", status_code=200, response_model=dict)
-def update_password(user_id: str, password: UserUpdatePassword):
-    try:
-        password_dict = password.model_dump()
-        result = mongo_update_one(user_id, password_dict)
-        if result.modified_count == 0:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
-        return {"updated": "Password updated"}
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Error: {e}")
     

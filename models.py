@@ -145,21 +145,10 @@ class UserCreate(User):
 
     @model_validator(mode="before")
     def validate_password(cls, values):
-        password = values.get("password", generate_password())
-        # print(password)
+        password = values.get("password")
         if not isinstance(password, str):
             raise ValueError("Пароль должен быть строкой.")
-        # pattern = (
-        #     r"^(?=.*[a-z])"        # хотя бы одна строчная буква
-        #     r"(?=.*[A-Z])"         # хотя бы одна заглавная буква
-        #     r"(?=.*\d)"            # хотя бы одна цифра
-        #     r"(?=.*[!@#$%^&*])"    # хотя бы один специальный символ
-        #     r".{8,20}$"            # длина от 8 до 20 символов
-        # )
-        # if not re.match(pattern, password):
-        #     raise ValueError(
-        #         "Пароль должен содержать от 8 до 20 символов, включая строчные и заглавные буквы, цифры и специальные символы."
-        #     )
+        
         hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
         values["password"] = str(hashed_password)
         return values
@@ -186,14 +175,12 @@ class UserRead(User):
         default=None,
     )
 
-
-class UserUpdatePassword(BaseModel):
-    password: Optional[str]
-
     @model_validator(mode="before")
     def validate_password(cls, values):
-        password = values.get("password", generate_password())
-        # print(password)
+        password = values.get("password")
+        if not password:
+            return values
+        print(password)
         if not isinstance(password, str):
             raise ValueError("Пароль должен быть строкой.")
         pattern = (
