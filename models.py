@@ -35,6 +35,7 @@ class User(BaseModel):
         description="Отчество пользователя на кириллице"
     )
     email: Optional[EmailStr] = Field(
+        default=None,
         description="Валидный емайл"
     )
     iin: Optional[str] = Field(
@@ -48,6 +49,7 @@ class User(BaseModel):
 
     )
     role: EmployeeRole = Field(
+        default=None,
         description="Сотрудник, посетитель или админ"
     )
     phone_number: Optional[str] = Field(
@@ -68,6 +70,7 @@ class User(BaseModel):
         description="Департамент где работает пользователь"
     )
     gender: Gender = Field(
+        default=None,
         description="Пол пользователя"
     )
     marital_status: Optional[str] = Field(
@@ -113,13 +116,15 @@ class UserCreate(User):
         description="Генерирует автоматический"
     )
     img_path: Optional[str] = Field(
+        default=None,
         description="Вставляется автоматический, это ссылка на фото пользователя"
     )
     username: Optional[str] = Field(
+        default=None,
         description="Генерируется автоматический"
     )
     password: Optional[str] = Field(
-        default="@BIi#n3ArKXf",
+        default="123456",
         # default_factory=generate_password,
         description="Генерируется автоматический первый раз"
     )
@@ -162,17 +167,49 @@ class UserCreate(User):
 
 class UserRead(User):
     user_id: Optional[str] = Field(
+        default=None,
         description="Генерирует автоматический"
     )
     img_path: Optional[str] = Field(
+        default=None,
         description="Вставляется автоматический, это ссылка на фото пользователя"
     )
     username: Optional[str] = Field(
+        default=None,
         description="Генерируется автоматический"
     )
     password: Optional[str] = Field(
-        description="Генерируется автоматический первый раз"
+        default=None,
+        description="По умолчанию 123456"
     )
-    created_at: Optional[datetime]
+    created_at: Optional[datetime] = Field(
+        default=None,
+    )
+
+
+class UserUpdatePassword(BaseModel):
+    password: Optional[str]
+
+    @model_validator(mode="before")
+    def validate_password(cls, values):
+        password = values.get("password", generate_password())
+        # print(password)
+        if not isinstance(password, str):
+            raise ValueError("Пароль должен быть строкой.")
+        pattern = (
+            r"^(?=.*[a-z])"        # хотя бы одна строчная буква
+            r"(?=.*[A-Z])"         # хотя бы одна заглавная буква
+            r"(?=.*\d)"            # хотя бы одна цифра
+            r"(?=.*[!@#$%^&*])"    # хотя бы один специальный символ
+            r".{8,20}$"            # длина от 8 до 20 символов
+        )
+        if not re.match(pattern, password):
+            raise ValueError(
+                "Пароль должен содержать от 8 до 20 символов, включая строчные и заглавные буквы, цифры и специальные символы."
+            )
+        hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        values["password"] = str(hashed_password)
+        return values
+
     
     

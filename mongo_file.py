@@ -44,11 +44,11 @@ def mongo_get_by_id(id):
 def mongo_update_one(id: str, employee: dict):
     filter = {"_id": ObjectId(id)}
     new_values = {"$set": employee}
-    setup_mongo().update_one(filter, new_values)
+    return setup_mongo().update_one(filter, new_values)
 
 
 def mongo_delete_one(id: str):
-    setup_mongo().delete_one({"_id": ObjectId(id)})
+    return setup_mongo().delete_one({"_id": ObjectId(id)})
 
 
 def mongo_get_username(username):
